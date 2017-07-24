@@ -5,8 +5,6 @@ defmodule EventStore.Storage.Appender do
 
   require Logger
 
-  alias EventStore.Sql.Statements
-
   @doc """
   Append the given list of events to the given stream.
 
@@ -14,29 +12,36 @@ defmodule EventStore.Storage.Appender do
   """
   def append(conn, stream_id, events) do
     conn
-    |> stream_events_into_table(stream_id, events)
+    |> stream_events_into_table(events)
     |> handle_response(stream_id, events)
   end
 
   @header ["PGCOPY\n\xff\r\n\0\0\0\0\0\0\0\0\0\0"]
   @trailer [<<-1 :: signed-16>>]
 
-  defp stream_events_into_table(conn, stream_id, events) do
+  def stream_events_into_table(conn, events) do
     try do
       Postgrex.transaction(conn, fn (conn) ->
         stream = Postgrex.stream(conn, "COPY events(event_id, stream_id, stream_version, event_type, correlation_id, causation_id, data, metadata, created_at) FROM STDIN (FORMAT BINARY)", [], max_rows: 0)
 
-        encoded_events =
-          events
-          |> Stream.map(&encode/1)
-
-        [@header, encoded_events, @trailer]
-        |> Stream.concat()
+        events
+        |> pg_copy_stream()
         |> Enum.into(stream)
       end)
     rescue
       error -> {:error, error}
     end
+  end
+
+  def pg_copy_stream(events) do
+    [@header, encode_events(events), @trailer]
+    |> Stream.concat()
+  end
+
+  defp encode_events(events) do
+    events
+    |> Stream.flat_map(&encode/1)
+    |> Stream.drop(-1)
   end
 
   defp encode(event) do
@@ -51,6 +56,7 @@ defmodule EventStore.Storage.Appender do
       <<byte_size(event.data) :: signed-32>>, event.data,
       <<byte_size(event.metadata) :: signed-32>>, event.metadata,
       encode_date(event.created_at),
+      "\0",
     ]
   end
 

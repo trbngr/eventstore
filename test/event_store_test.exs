@@ -40,6 +40,27 @@ defmodule EventStoreTest do
 
     assert recorded_event.event_id > 0
     assert recorded_event.stream_id > 0
+    assert recorded_event.event_type == created_event.event_type
+    assert recorded_event.causation_id == created_event.causation_id
+    assert recorded_event.correlation_id == created_event.correlation_id
+    assert recorded_event.data == created_event.data
+    assert recorded_event.metadata == created_event.metadata
+  end
+
+  test "read stream forward containing many events from event store" do
+    stream_uuid = UUID.uuid4()
+    events = EventFactory.create_events(5)
+
+    :ok = EventStore.append_to_stream(stream_uuid, 0, events)
+    {:ok, recorded_events} = EventStore.read_stream_forward(stream_uuid, 0)
+
+    assert length(recorded_events) == 5
+
+    created_event = hd(events)
+    recorded_event = hd(recorded_events)
+
+    assert recorded_event.event_id > 0
+    assert recorded_event.stream_id > 0
     assert recorded_event.data == created_event.data
     assert recorded_event.metadata == created_event.metadata
   end

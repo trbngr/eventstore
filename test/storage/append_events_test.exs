@@ -19,6 +19,15 @@ defmodule EventStore.Storage.AppendEventsTest do
     {:ok, 1} = Appender.append(conn, stream_id, recorded_events)
   end
 
+  test "append multiple events to new stream, separate appends", %{conn: conn} do
+    {:ok, stream_id} = Stream.create_stream(conn, UUID.uuid4)
+    recorded_events = EventFactory.create_recorded_events(1, stream_id)
+    {:ok, 1} = Appender.append(conn, stream_id, recorded_events)
+
+    recorded_events = EventFactory.create_recorded_events(1, stream_id, 2, 2)
+    {:ok, 1} = Appender.append(conn, stream_id, recorded_events)
+  end
+
   test "append multiple events to new stream", %{conn: conn} do
     {:ok, stream_id} = Stream.create_stream(conn, UUID.uuid4)
     recorded_events = EventFactory.create_recorded_events(3, stream_id)
@@ -79,5 +88,24 @@ defmodule EventStore.Storage.AppendEventsTest do
 
     {:ok, 2} = Appender.append(conn, stream_id, events)
     {:error, :wrong_expected_version} = Appender.append(conn, stream_id, events)
+  end
+
+  @tag :skip
+  test "encode events to PGCOPY binary format", %{conn: conn} do
+    {:ok, stream_id} = Stream.create_stream(conn, UUID.uuid4)
+    recorded_events = EventFactory.create_recorded_events(2, 1)
+
+    {:ok, 2} = Appender.append(conn, stream_id, recorded_events)
+
+    Postgrex.query!(conn, "COPY events(event_id, stream_id, stream_version, event_type, correlation_id, causation_id, data, metadata, created_at) TO '/tmp/events.expected.dat' (FORMAT BINARY);", [])
+
+    recorded_events
+    |> Appender.pg_copy_stream()
+    |> Enum.into(File.stream!("/tmp/events.actual.dat", []))
+
+    expected = File.read!("/tmp/events.expected.dat")
+    actual = File.read!("/tmp/events.actual.dat")
+
+    assert expected == actual
   end
 end

@@ -54,13 +54,10 @@ defmodule EventStore.EventFactory do
     end)
   end
 
-  defp serialize(term) do
-    EventStore.JsonSerializer.serialize(term)
-  end
+  use EventStore.Serializer
 
-  defp deserialize(binary, type) do
-    EventStore.JsonSerializer.deserialize(binary, type)
-  end
+  defp serialize(term), do: @serializer.serialize(term)
+  defp deserialize(binary, type), do: @serializer.deserialize(binary, type)
 
   defp now, do: DateTime.utc_now |> DateTime.to_naive
 end
