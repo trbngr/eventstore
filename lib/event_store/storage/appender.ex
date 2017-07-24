@@ -47,7 +47,7 @@ defmodule EventStore.Storage.Appender do
       <<8 :: signed-32, event.stream_version :: signed-64>>,
       <<byte_size(event.event_type) :: signed-32>>, event.event_type,
       <<byte_size(event.correlation_id) :: signed-32>>, event.correlation_id,
-      <<byte_size(event.causation_id) :: signed-32>>, event.correlation_id,
+      <<byte_size(event.causation_id) :: signed-32>>, event.causation_id,
       <<byte_size(event.data) :: signed-32>>, event.data,
       <<byte_size(event.metadata) :: signed-32>>, event.metadata,
       encode_date(event.created_at),
