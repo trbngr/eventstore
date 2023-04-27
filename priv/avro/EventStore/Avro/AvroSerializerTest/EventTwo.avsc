@@ -1,0 +1,23 @@
+{
+    "namespace": "EventStore.Avro.AvroSerializerTest",
+    "name": "EventTwo",
+    "type": "record",
+    "fields": [
+        {
+            "name": "name",
+            "type": "string"
+        },
+        {
+            "name": "pet",
+            "type": {
+                "type": "enum",
+                "name": "Pet",
+                "symbols": [
+                    "dog",
+                    "cat",
+                    "snake"
+                ]
+            }
+        }
+    ]
+}

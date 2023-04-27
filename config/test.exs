@@ -21,4 +21,15 @@ config :eventstore, TestEventStore, default_config
 config :eventstore, SecondEventStore, Keyword.put(default_config, :database, "eventstore_test_2")
 config :eventstore, SchemaEventStore, default_config
 
-config :eventstore, event_stores: [TestEventStore, SecondEventStore, SchemaEventStore]
+# TODO: EXTRACT
+config :eventstore, EventStore.Avro.AvroClient, registry_url: "http://localhost:52026"
+
+config :eventstore,
+       AvroEventStore,
+       Keyword.merge(default_config,
+         database: "eventstore_avro_test",
+         serializer: EventStore.Avro.AvroSerializer
+       )
+
+config :eventstore,
+  event_stores: [TestEventStore, SecondEventStore, SchemaEventStore, AvroEventStore]

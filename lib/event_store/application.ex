@@ -5,7 +5,9 @@ defmodule EventStore.Application do
 
   def start(_type, _args) do
     children = [
-      EventStore.Config.Store
+      EventStore.Config.Store,
+      # TODO: EXTRACT
+      EventStore.Avro.Supervisor
     ]
 
     opts = [strategy: :one_for_one, name: EventStore.Supervisor]

@@ -1,0 +1,11 @@
+{
+    "namespace": "EventStore.Avro.AvroSerializerTest",
+    "name": "EventOne",
+    "type": "record",
+    "fields": [
+        {
+            "name": "name",
+            "type": "string"
+        }
+    ]
+}
